@@ -3,6 +3,7 @@ import pandas as pd
 import pyodbc
 import numpy as np
 from numpy import nan
+import os
 
 
 @pytest.fixture
@@ -17,12 +18,13 @@ def target_db_ordersales():
 @pytest.fixture
 def source_db_ordersales():
     conn_str = (
-        "DRIVER={ODBC Driver 17 for SQL Server};"  # Use the appropriate driver version
-        "SERVER=DESKTOP-77LK4FJ;"                 # Replace with your server name (e.g., "localhost" or ".\SQLEXPRESS")
-        "DATABASE=northwind;"             # Replace with your database name
-        "Trusted_Connection=yes;"                  # This enables Windows Authentication
-        "Encrypt=yes;"                             # Enable encryption
-        "TrustServerCertificate=yes;"              # Trust the certificate
+        "DRIVER={ODBC Driver 17 for SQL Server};"
+        f"SERVER={os.getenv('DB_SERVER', 'DESKTOP-77LK4FJ')};"
+        f"DATABASE={os.getenv('DB_NAME', 'northwind')};"
+        f"UID={os.getenv('DB_USER', 'your_username')};"  # Will be overridden by Jenkins credentials
+        f"PWD={os.getenv('DB_PASSWORD', 'your_password')};"  # Will be overridden by Jenkins credentials
+        "Encrypt=yes;"
+        "TrustServerCertificate=yes;"
     )
     conn = pyodbc.connect(conn_str)
     query = """

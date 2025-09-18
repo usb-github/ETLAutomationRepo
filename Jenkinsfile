@@ -14,6 +14,9 @@ pipeline {
         DB_SERVER = 'DESKTOP-77LK4FJ'
         DB_NAME = 'northwind'
         DB_DRIVER = '{ODBC Driver 17 for SQL Server}'
+        // Credentials will be injected from Jenkins credentials
+        DB_USER = credentials('DB_USER')
+        DB_PASSWORD = credentials('DB_PASSWORD')
     }
     
     stages {
@@ -50,7 +53,8 @@ conn_str = (
     "DRIVER=${DB_DRIVER};"
     "SERVER=${DB_SERVER};"
     "DATABASE=${DB_NAME};"
-    "Trusted_Connection=yes;"
+    "UID=${DB_USER};"
+    "PWD=${DB_PASSWORD};"
     "Encrypt=yes;"
     "TrustServerCertificate=yes;"
 )
