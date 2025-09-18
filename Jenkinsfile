@@ -1,6 +1,10 @@
 pipeline {
     agent any
     
+    triggers {
+        pollSCM('H/5 * * * *')  // Poll every 5 minutes for changes
+    }
+    
     environment {
         // Python and path settings
         PYTHON_PATH = 'C:\\Python313\\python.exe'
