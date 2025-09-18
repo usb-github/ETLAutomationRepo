@@ -17,15 +17,28 @@ def target_db_ordersales():
     return odf
 @pytest.fixture
 def source_db_ordersales():
-    conn_str = (
-        "DRIVER={ODBC Driver 17 for SQL Server};"
-        f"SERVER={os.getenv('DB_SERVER', 'DESKTOP-77LK4FJ')};"
-        f"DATABASE={os.getenv('DB_NAME', 'northwind')};"
-        f"UID={os.getenv('DB_USER', 'your_username')};"  # Will be overridden by Jenkins credentials
-        f"PWD={os.getenv('DB_PASSWORD', 'your_password')};"  # Will be overridden by Jenkins credentials
-        "Encrypt=yes;"
-        "TrustServerCertificate=yes;"
-    )
+    # Check if we're running in Jenkins (environment variables will be set)
+    if os.getenv('DB_USER') and os.getenv('DB_PASSWORD'):
+        # Use SQL Server authentication in Jenkins
+        conn_str = (
+            "DRIVER={ODBC Driver 17 for SQL Server};"
+            f"SERVER={os.getenv('DB_SERVER', 'DESKTOP-77LK4FJ')};"
+            f"DATABASE={os.getenv('DB_NAME', 'northwind')};"
+            f"UID={os.getenv('DB_USER')};"
+            f"PWD={os.getenv('DB_PASSWORD')};"
+            "Encrypt=yes;"
+            "TrustServerCertificate=yes;"
+        )
+    else:
+        # Use Windows authentication for local development
+        conn_str = (
+            "DRIVER={ODBC Driver 17 for SQL Server};"
+            "SERVER=DESKTOP-77LK4FJ;"
+            "DATABASE=northwind;"
+            "Trusted_Connection=yes;"
+            "Encrypt=yes;"
+            "TrustServerCertificate=yes;"
+        )
     conn = pyodbc.connect(conn_str)
     query = """
         SELECT productID as pid, Round(sum(unitPrice * quantity),2) as totalSales

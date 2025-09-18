@@ -49,15 +49,30 @@ pipeline {
                     // Create a simple Python script to test the database connection
                     writeFile file: 'test_connection.py', text: """
 import pyodbc
-conn_str = (
-    "DRIVER=${DB_DRIVER};"
-    "SERVER=${DB_SERVER};"
-    "DATABASE=${DB_NAME};"
-    "UID=${DB_USER};"
-    "PWD=${DB_PASSWORD};"
-    "Encrypt=yes;"
-    "TrustServerCertificate=yes;"
-)
+import os
+
+# Check if we're running in Jenkins (environment variables will be set)
+if 'DB_USER' in os.environ and 'DB_PASSWORD' in os.environ:
+    # Use SQL Server authentication in Jenkins
+    conn_str = (
+        "DRIVER=${DB_DRIVER};"
+        "SERVER=${DB_SERVER};"
+        "DATABASE=${DB_NAME};"
+        "UID=${DB_USER};"
+        "PWD=${DB_PASSWORD};"
+        "Encrypt=yes;"
+        "TrustServerCertificate=yes;"
+    )
+else:
+    # Use Windows authentication for local development
+    conn_str = (
+        "DRIVER=${DB_DRIVER};"
+        "SERVER=${DB_SERVER};"
+        "DATABASE=${DB_NAME};"
+        "Trusted_Connection=yes;"
+        "Encrypt=yes;"
+        "TrustServerCertificate=yes;"
+    )
 try:
     conn = pyodbc.connect(conn_str)
     print("Database connection successful!")
