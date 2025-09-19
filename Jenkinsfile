@@ -5,29 +5,31 @@ pipeline {
         // Database configuration
         DB_SERVER = "DESKTOP-77LK4FJ"  // Your server name
         DB_NAME = "northwind"          // Your database name
-        // Bind credentials to environment variables
-        MSSQL_CREDS = credentials('sql-server-credentials')
-        DB_USER = "${MSSQL_CREDS_USR}"
-        DB_PASSWORD = "${MSSQL_CREDS_PSW}"
     }
     
     stages {
-        stage('Verify Environment') {
-            steps {
-                bat '''
-                    echo Testing environment variables:
-                    echo DB_SERVER: %DB_SERVER%
-                    echo DB_NAME: %DB_NAME%
-                    echo DB_USER: %DB_USER%
-                '''
-            }
-        }
-        
         stage('Test DB Connection') {
             steps {
-                bat '''
-                    python -c "import pyodbc; print('Testing connection...'); conn = pyodbc.connect('DRIVER={ODBC Driver 17 for SQL Server};SERVER=%DB_SERVER%;DATABASE=%DB_NAME%;UID=%DB_USER%;PWD=%DB_PASSWORD%;Encrypt=yes;TrustServerCertificate=yes;'); print('Connection successful!'); cursor = conn.cursor(); cursor.execute('SELECT COUNT(*) FROM [order_details]'); print(f'Number of records in order_details: {cursor.fetchone()[0]}'); conn.close()"
-                '''
+                withCredentials([usernamePassword(credentialsId: 'sql-server-credentials', usernameVariable: 'DB_USER', passwordVariable: 'DB_PASSWORD')]) {
+                    script {
+                        // Create a temporary Python script with proper credentials
+                        writeFile file: 'test_connection.py', text: """
+import pyodbc
+print('Testing connection...')
+conn_str = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER=${DB_SERVER};DATABASE=${DB_NAME};UID={env.DB_USER};PWD={env.DB_PASSWORD};Encrypt=yes;TrustServerCertificate=yes;'
+conn = pyodbc.connect(conn_str)
+print('Connection successful!')
+cursor = conn.cursor()
+cursor.execute('SELECT COUNT(*) FROM [order_details]')
+print(f'Number of records in order_details: {cursor.fetchone()[0]}')
+conn.close()
+"""
+                        // Execute the Python script
+                        bat 'python test_connection.py'
+                        // Clean up the temporary file
+                        bat 'del test_connection.py'
+                    }
+                }
             }
         }
         stage('Checkout') {
@@ -38,9 +40,13 @@ pipeline {
         
         stage('Run Tests') {
             steps {
-                bat '''
-                    python -m pytest test_ETL_data_core.py --html=report.html --self-contained-html -v
-                '''
+                withCredentials([usernamePassword(credentialsId: 'sql-server-credentials', usernameVariable: 'DB_USER', passwordVariable: 'DB_PASSWORD')]) {
+                    bat '''
+                        set DB_USER=%DB_USER%
+                        set DB_PASSWORD=%DB_PASSWORD%
+                        python -m pytest test_ETL_data_core.py --html=report.html --self-contained-html -v
+                    '''
+                }
             }
         }
         
