@@ -22,6 +22,14 @@ pipeline {
                 '''
             }
         }
+        
+        stage('Test DB Connection') {
+            steps {
+                bat '''
+                    python -c "import pyodbc; print('Testing connection...'); conn = pyodbc.connect('DRIVER={ODBC Driver 17 for SQL Server};SERVER=%DB_SERVER%;DATABASE=%DB_NAME%;UID=%DB_USER%;PWD=%DB_PASSWORD%;Encrypt=yes;TrustServerCertificate=yes;'); print('Connection successful!'); cursor = conn.cursor(); cursor.execute('SELECT COUNT(*) FROM [order_details]'); print(f'Number of records in order_details: {cursor.fetchone()[0]}'); conn.close()"
+                '''
+            }
+        }
         stage('Checkout') {
             steps {
                 checkout scm
