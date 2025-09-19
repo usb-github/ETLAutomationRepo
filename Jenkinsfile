@@ -29,8 +29,8 @@ pipeline {
     
     post {
         always {
-            // Make sure we're inside a node block for filesystem access
-            node {
+            // Using node() with empty parentheses to use any available agent
+            node() {
                 publishHTML([
                     allowMissing: false,
                     alwaysLinkToLastBuild: true,
