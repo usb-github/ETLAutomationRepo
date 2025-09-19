@@ -25,12 +25,9 @@ pipeline {
                 '''
             }
         }
-    }
-    
-    post {
-        always {
-            // Using node() with empty parentheses to use any available agent
-            node() {
+        
+        stage('Publish Report') {
+            steps {
                 publishHTML([
                     allowMissing: false,
                     alwaysLinkToLastBuild: true,
