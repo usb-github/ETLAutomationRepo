@@ -2,15 +2,27 @@ pipeline {
     agent any
     
     environment {
-        // Using credentials binding
-        SQL_CREDS = credentials('sql-server-credentials')
-        DB_USER = "${SQL_CREDS_USR}"
-        DB_PASSWORD = "${SQL_CREDS_PSW}"
+        // Database configuration
         DB_SERVER = "DESKTOP-77LK4FJ"  // Your server name
         DB_NAME = "northwind"          // Your database name
     }
     
     stages {
+        stage('Setup Credentials') {
+            steps {
+                script {
+                    withCredentials([usernamePassword(
+                        credentialsId: 'sql-server-credentials',
+                        usernameVariable: 'DB_USER',
+                        passwordVariable: 'DB_PASSWORD'
+                    )]) {
+                        // Make credentials available to subsequent stages
+                        env.DB_USER = "$DB_USER"
+                        env.DB_PASSWORD = "$DB_PASSWORD"
+                    }
+                }
+            }
+        }
         stage('Checkout') {
             steps {
                 checkout scm
