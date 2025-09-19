@@ -10,16 +10,17 @@ pipeline {
     stages {
         stage('Setup Credentials') {
             steps {
-                script {
-                    withCredentials([usernamePassword(
-                        credentialsId: 'sql-server-credentials',
-                        usernameVariable: 'DB_USER',
-                        passwordVariable: 'DB_PASSWORD'
-                    )]) {
-                        // Make credentials available to subsequent stages
-                        env.DB_USER = "$DB_USER"
-                        env.DB_PASSWORD = "$DB_PASSWORD"
-                    }
+                withCredentials([usernamePassword(
+                    credentialsId: 'sql-server-credentials',
+                    usernameVariable: 'DB_USER',
+                    passwordVariable: 'DB_PASSWORD'
+                )]) {
+                    bat '''
+                        set DB_USER=%DB_USER%
+                        set DB_PASSWORD=%DB_PASSWORD%
+                        set DB_SERVER=DESKTOP-77LK4FJ
+                        set DB_NAME=northwind
+                    '''
                 }
             }
         }
@@ -31,10 +32,18 @@ pipeline {
         
         stage('Run Tests') {
             steps {
-                // Run the tests with pytest
-                bat '''
-                    python -m pytest test_ETL_data_core.py --html=report.html --self-contained-html
-                '''
+                withCredentials([usernamePassword(
+                    credentialsId: 'sql-server-credentials',
+                    usernameVariable: 'DB_USER',
+                    passwordVariable: 'DB_PASSWORD'
+                )]) {
+                    bat '''
+                        echo Using DB_USER: %DB_USER%
+                        echo Using DB_SERVER: %DB_SERVER%
+                        echo Using DB_NAME: %DB_NAME%
+                        python -m pytest test_ETL_data_core.py --html=report.html --self-contained-html
+                    '''
+                }
             }
         }
         
