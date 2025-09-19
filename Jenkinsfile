@@ -5,23 +5,21 @@ pipeline {
         // Database configuration
         DB_SERVER = "DESKTOP-77LK4FJ"  // Your server name
         DB_NAME = "northwind"          // Your database name
+        // Bind credentials to environment variables
+        MSSQL_CREDS = credentials('sql-server-credentials')
+        DB_USER = "${MSSQL_CREDS_USR}"
+        DB_PASSWORD = "${MSSQL_CREDS_PSW}"
     }
     
     stages {
-        stage('Setup Credentials') {
+        stage('Verify Environment') {
             steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'sql-server-credentials',
-                    usernameVariable: 'DB_USER',
-                    passwordVariable: 'DB_PASSWORD'
-                )]) {
-                    bat '''
-                        set DB_USER=%DB_USER%
-                        set DB_PASSWORD=%DB_PASSWORD%
-                        set DB_SERVER=DESKTOP-77LK4FJ
-                        set DB_NAME=northwind
-                    '''
-                }
+                bat '''
+                    echo Testing environment variables:
+                    echo DB_SERVER: %DB_SERVER%
+                    echo DB_NAME: %DB_NAME%
+                    echo DB_USER: %DB_USER%
+                '''
             }
         }
         stage('Checkout') {
@@ -32,18 +30,9 @@ pipeline {
         
         stage('Run Tests') {
             steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'sql-server-credentials',
-                    usernameVariable: 'DB_USER',
-                    passwordVariable: 'DB_PASSWORD'
-                )]) {
-                    bat '''
-                        echo Using DB_USER: %DB_USER%
-                        echo Using DB_SERVER: %DB_SERVER%
-                        echo Using DB_NAME: %DB_NAME%
-                        python -m pytest test_ETL_data_core.py --html=report.html --self-contained-html
-                    '''
-                }
+                bat '''
+                    python -m pytest test_ETL_data_core.py --html=report.html --self-contained-html -v
+                '''
             }
         }
         
