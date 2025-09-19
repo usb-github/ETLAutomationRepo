@@ -11,24 +11,19 @@ pipeline {
         stage('Test DB Connection') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'sql-server-credentials', usernameVariable: 'DB_USER', passwordVariable: 'DB_PASSWORD')]) {
-                    script {
-                        // Create a temporary Python script with proper credentials
-                        writeFile file: 'test_connection.py', text: """
-import pyodbc
-print('Testing connection...')
-conn_str = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER=${DB_SERVER};DATABASE=${DB_NAME};UID={env.DB_USER};PWD={env.DB_PASSWORD};Encrypt=yes;TrustServerCertificate=yes;'
-conn = pyodbc.connect(conn_str)
-print('Connection successful!')
-cursor = conn.cursor()
-cursor.execute('SELECT COUNT(*) FROM [order_details]')
-print(f'Number of records in order_details: {cursor.fetchone()[0]}')
-conn.close()
-"""
-                        // Execute the Python script
-                        bat 'python test_connection.py'
-                        // Clean up the temporary file
-                        bat 'del test_connection.py'
-                    }
+                    bat '''
+                        echo import pyodbc > test_connection.py
+                        echo print('Testing connection...') >> test_connection.py
+                        echo conn_str = "DRIVER={ODBC Driver 17 for SQL Server};SERVER=%DB_SERVER%;DATABASE=%DB_NAME%;UID=%%DB_USER%%;PWD=%%DB_PASSWORD%%;Encrypt=yes;TrustServerCertificate=yes;" >> test_connection.py
+                        echo conn = pyodbc.connect(conn_str) >> test_connection.py
+                        echo print('Connection successful!') >> test_connection.py
+                        echo cursor = conn.cursor() >> test_connection.py
+                        echo cursor.execute('SELECT COUNT(*) FROM [order_details]') >> test_connection.py
+                        echo print(f'Number of records in order_details: {cursor.fetchone()[0]}') >> test_connection.py
+                        echo conn.close() >> test_connection.py
+                        python test_connection.py
+                        del test_connection.py
+                    '''
                 }
             }
         }
@@ -44,6 +39,8 @@ conn.close()
                     bat '''
                         set DB_USER=%DB_USER%
                         set DB_PASSWORD=%DB_PASSWORD%
+                        set DB_SERVER=%DB_SERVER%
+                        set DB_NAME=%DB_NAME%
                         python -m pytest test_ETL_data_core.py --html=report.html --self-contained-html -v
                     '''
                 }
